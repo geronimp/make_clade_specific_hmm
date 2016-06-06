@@ -85,13 +85,13 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
 def phelp():
     print """
-                            ~ Partition trees ~
+                        ~ Make clade specific HMMs ~
+
 Input options:
-    --input_tree         -    Input tree in newick format
-    --input_alignment    -    Input sequences to use for constructing a tree
-                              for partitioning.
     --input_sequences    -    Input sequences to align and use for constructing
-                              a tree for partitioning.
+                              a tree for partitioning. REQUIRED
+    --input_tree         -    Input tree in newick format. NOT REQUIRED
+
 Output options:
     --output_directory   -    Directory to which processing files and results
                               are written to
@@ -104,6 +104,19 @@ Runtime options:
                               collapse the major groups in the tree, but more 
                               granular partitioning can be achieved using a 
                               lower percentile)
+                              
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
+                                  ABOUT
+This tool is used to create clade-specific HMMs from a phylogenetic tree. The
+tree can be provided, or created in the program using FastTreeMP. The HMMs are 
+taxonomy agnostic, meaning that the only criteria used to group sequences 
+together to create a HMM is phylogenetic distance. HMMs therefore represent 
+phylogenetic, not taxonomic groupings. HMMs that are created are tested on the 
+sequences provided, not an independent dataset, so take the calibration results 
+with a grain of salt. That said, they should provide a rough guideline of the 
+error rate of each HMM (suggested cutoffs are provided). 
+
+This program does take time to run on large gene families. Be patient.
 """ 
 
 ###############################################################################
@@ -115,8 +128,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='''Automatically partition a tree''')
     parser.add_argument('--input_tree')
-    parser.add_argument('--input_alignment')
-    parser.add_argument('--input_sequences')
+    parser.add_argument('--input_sequences', required=True)
     parser.add_argument('--output_directory',
                         default = "partition_output")
     parser.add_argument('--force',

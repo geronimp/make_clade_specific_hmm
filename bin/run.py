@@ -67,23 +67,20 @@ class Hmmm:
         os.mkdir(self.alignments_subdirectory)
         os.mkdir(self.hmms_subdirectory)
         
-        if not args.input_tree:
-            if(not args.input_sequences and not args.input_alignment):
-                raise Exception("No sequences, alignment or tree provided")
-            if args.input_sequences:
-                pass # align and make tree
-            elif args.input_alignment:
-                pass # make tree
-        else:
-            if(not args.input_sequences and not args.input_alignment):
-                raise Exception("No sequences or alignment provided")
-            if args.input_sequences:
-                self.sequences = args.input_sequences                     
-            elif args.input_alignment:
-                self.sequences = args.input_alignment
-            self.tree = args.input_tree   
-        
+        self.sequences = args.input_sequences
         self.base = os.path.splitext(os.path.basename(self.sequences))[0]
+        
+        if not args.input_tree:        
+            logging.info("No tree was provided. Alinging sequences (mafft), then constructing a phylogenetic tree (FastTreeMP) on the fly")      
+            output_alignment = os.path.join(self.output_directory,
+                                            "%s.aln.fasta" % self.base)
+            output_tree      =  os.path.join(self.output_directory,
+                                             "%s.nwk" % self.base)
+            self._make_align(self.sequences, output_alignment)
+            self._make_tree(output_alignment, output_tree)
+            self.tree = output_tree
+        else:              
+            self.tree = args.input_tree   
         
         shutil.copy(self.sequences, 
                     os.path.join(self.output_directory,
@@ -92,9 +89,23 @@ class Hmmm:
         self.sequences_dict = SeqIO.to_dict(SeqIO.parse(self.sequences, "fasta"))
         self.output_tree = os.path.join(self.output_directory,
                                         "%s.partitioned%s" \
-                                            % os.path.splitext(args.input_tree))
+                                            % os.path.splitext(os.path.basename(self.tree)))
+    
+    def _make_tree(self, sequences, output_tree):
+        logging.debug("Contstructing phylogenetic tree using FastTreeMP")
+        cmd = "FastTreeMP -quiet %s > %s 2>/dev/null" % (sequences, output_tree)
+        logging.debug("Running: %s" % cmd)
+        subprocess.call(cmd, shell=True)
+    
+    def _make_align(self, name, output):
         
+        cmd = "mafft --quiet --anysymbol %s > %s" \
+                                % (name, output)
+        logging.debug("Running: %s" % cmd)
+        subprocess.check_call(cmd, shell=True)
+    
     def _align_sequences(self, sequence_group, sequence_names):
+
         logging.debug("Aligning %i sequences in cluster: %s" \
                                     % (len(sequence_names), sequence_group))
         output_alignment_path = os.path.join(self.alignments_subdirectory,
@@ -103,11 +114,7 @@ class Hmmm:
         with tempfile.NamedTemporaryFile(suffix='.fa') as fasta:
             SeqIO.write(sequence_seqs, fasta, "fasta")
             fasta.flush()
-            # TODO: change to mafft-linsi
-            cmd = "mafft --quiet --anysymbol %s > %s" \
-                                    % (fasta.name, output_alignment_path)
-            subprocess.check_call(cmd, shell=True)
-        
+            self._make_align(fasta.name, output_alignment_path)
         return output_alignment_path
         
     def _create_hmm(self, sequence_group, alignment_file):
