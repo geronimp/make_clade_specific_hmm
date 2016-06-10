@@ -96,8 +96,8 @@ class Cluster:
                 node.name = "%s; %s" % (node.name,
                                         name)
         else:
-            node.name = name
-                   
+            node.name = name     
+               
     def depth_partition(self, input_tree, percentile, output_tree):
         '''
         Attempt to cluster tree with nodes of tip-to-tip distrubution <
@@ -120,7 +120,7 @@ class Cluster:
         http://www.nature.com/ncomms/journal/v2/n5/full/ncomms1325.html
         '''
         tree = TreeNode.read(input_tree)
-        
+        tree = tree.root_at_midpoint()
         cluster_count = 1
         clustered = set()
         clusters = {}

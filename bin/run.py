@@ -99,7 +99,7 @@ class Hmmm:
     
     def _make_align(self, name, output):
         
-        cmd = "mafft --quiet --anysymbol %s > %s" \
+        cmd = "mafft --thread 5 --quiet --anysymbol %s > %s" \
                                 % (name, output)
         logging.debug("Running: %s" % cmd)
         subprocess.check_call(cmd, shell=True)
